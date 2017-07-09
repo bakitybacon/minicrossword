@@ -22,4 +22,29 @@ public enum Letter
 	{
 		return display;
 	}
+	
+	public static Letter[] fromString(String string)
+	{
+		string = string.toUpperCase();
+		Letter[] letters = new Letter[string.length()];
+		OUTER: for(int i = 0; i < string.length(); i++)
+		{
+			for(Letter l : Letter.values())
+				if(string.charAt(i) == l.getChar())
+				{
+					letters[i] = l;
+					continue OUTER;
+				}
+		}
+		return letters;
+	}
+	
+	public static boolean letterExists(char c)
+	{
+		if(c >= 'a' && c <= 'z')
+			return true;
+		if(c >= 'A' && c <= 'Z')
+			return true;
+		return false;
+	}
 }

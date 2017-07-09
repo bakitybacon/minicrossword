@@ -1,10 +1,10 @@
 package grid;
 
-public class WordAndNumPos implements Comparable
+public class Word implements Comparable
 {
 	public final String word;
 	public final int numPos;
-	public WordAndNumPos(String word, int numPos)
+	public Word(String word, int numPos)
 	{
 		this.word = word;
 		this.numPos = numPos;
@@ -13,8 +13,8 @@ public class WordAndNumPos implements Comparable
 	@Override
 	public int compareTo(Object other)
 	{
-		if(!(other instanceof WordAndNumPos))
+		if(!(other instanceof Word))
 			throw new IllegalArgumentException("Can't compare");
-		return numPos - ((WordAndNumPos)other).numPos; 
+		return numPos - ((Word)other).numPos; 
 	}
 }
