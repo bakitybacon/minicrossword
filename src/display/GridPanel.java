@@ -9,14 +9,20 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Scanner;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 import grid.Letter;
+import minicrossword.Crossword;
+import minicrossword.Word;
+import minicrossword.WordSortbyNumPoss;
 
 public class GridPanel extends JPanel implements MouseListener, KeyListener
 {
@@ -24,6 +30,10 @@ public class GridPanel extends JPanel implements MouseListener, KeyListener
 	private int numClues = 0;
 	LetterBox[][] grid = new LetterBox[5][5];
 	CluePanel cp = null;
+	
+	Crossword cross = null;
+	
+	String[] wordlist = null;
 	
 	int focusX;
 	int focusY;
@@ -35,23 +45,40 @@ public class GridPanel extends JPanel implements MouseListener, KeyListener
 			{
 				grid[i][j] = new LetterBox();
 				if(i == 0 && j == 0)
-					grid[i][j] = new LetterBox(Letter.BLACK);
-				if(i == 1 && j == 0)
-					grid[i][j] = new LetterBox(Letter.BLACK);
-				if(i == 0 && j == 1)
-					grid[i][j] = new LetterBox(Letter.C);
-				if(i == 0 && j == 2)
-					grid[i][j] = new LetterBox(Letter.H);
-				if(i == 0 && j == 3)
 					grid[i][j] = new LetterBox(Letter.A);
+				//if(i == 1 && j == 0)
+				//	grid[i][j] = new LetterBox(Letter.BLACK);
+				if(i == 0 && j == 1)
+					grid[i][j] = new LetterBox(Letter.S);
+				if(i == 0 && j == 2)
+					grid[i][j] = new LetterBox(Letter.P);
+				if(i == 0 && j == 3)
+					grid[i][j] = new LetterBox(Letter.E);
 				if(i == 0 && j == 4)
-					grid[i][j] = new LetterBox(Letter.T);
+					grid[i][j] = new LetterBox(Letter.N);
 			}
 		
 		focusX = -1;
 		focusY = -1;
 		generateClues();
 		getClues();
+		
+		try
+		{
+			Scanner CrosswordClues = new Scanner(new File("5word.game"));
+			int numWords = CrosswordClues.nextInt();
+			wordlist = new String[numWords];
+			for(int i = 0; i < numWords; i++)
+			{
+				wordlist[i] = CrosswordClues.next();
+			}
+			CrosswordClues.close();
+			System.out.println("Success");
+		}
+		catch(FileNotFoundException exception)
+		{
+			System.err.println("File not found!");
+		}
 		
 		addMouseListener(this);
 		addKeyListener(this);
@@ -62,7 +89,7 @@ public class GridPanel extends JPanel implements MouseListener, KeyListener
 		this.cp = cp;
 	}
 	
-	public void paint(Graphics g)
+	public void paintComponent(Graphics g)
 	{
 		Graphics2D g2 = (Graphics2D)g;
 		
@@ -99,7 +126,11 @@ public class GridPanel extends JPanel implements MouseListener, KeyListener
 				
 				if(!lb.letter.equals(Letter.BLANK) && !lb.letter.equals(Letter.BLACK))
 				{
+					if(lb.isGray())
+						g2.setColor(Color.LIGHT_GRAY);
+					else g2.setColor(Color.BLACK);
 					g2.drawChars(new char[]{lb.letter.getChar()}, 0, 1, squareWidth * j + squareWidth/3, squareHeight * i + squareHeight*2/3);
+					g2.setColor(Color.BLACK);
 				}
 				
 				if(lb.clueNum != -1)
@@ -167,7 +198,7 @@ public class GridPanel extends JPanel implements MouseListener, KeyListener
 				}
 			}
 		
-		System.out.println(Arrays.toString(cluemap));
+		//System.out.println(Arrays.toString(cluemap));
 		return cluemap;
 	}
 	
@@ -205,8 +236,8 @@ public class GridPanel extends JPanel implements MouseListener, KeyListener
 				}
 				else grid[i][j].setClueNum(-1);
 			}
-		for(LetterBox[] lb : grid)
-			System.out.println(Arrays.toString(lb));
+		//for(LetterBox[] lb : grid)
+		//	System.out.println(Arrays.toString(lb));
 		
 		numClues = clueNum;
 	}
@@ -262,9 +293,42 @@ public class GridPanel extends JPanel implements MouseListener, KeyListener
 	@Override
 	public void keyPressed(KeyEvent ke) 
 	{
-		if(focusX != -1 && focusY != -1)
+		char c = ke.getKeyChar();
+		if(c == KeyEvent.VK_SPACE)
 		{
-			char c = ke.getKeyChar();
+			System.out.println("searching...");
+			LetterBox[][] oldgrid = new LetterBox[5][5];
+			Letter[][] oldgridletters = new Letter[5][5];
+			for(int i = 0; i < grid.length;i++)
+				for(int j = 0; j < grid.length;j++)
+				{
+					oldgrid[i][j] = grid[i][j];
+					oldgridletters[i][j] = grid[i][j].getLetter();
+				}
+			Letter[][] lettergrid = new Letter[5][5];
+			for(int i = 0; i < grid.length;i++)
+				for(int j = 0; j < grid.length;j++)
+					lettergrid[i][j] = grid[i][j].getLetter();
+			cross = new Crossword(lettergrid,wordlist);
+			Searcher searcher = new Searcher();
+			cross = searcher.Search(cross,oldgridletters);
+			if(cross == null)
+			{
+				grid = oldgrid;
+				repaint();
+				return;
+			}
+			Letter[][] solution = searcher.Search(cross,oldgridletters).getGrid();
+			updateFromLetterArray(solution);
+			repaint();
+		}
+		else if(focusX != -1 && focusY != -1)
+		{
+			if(ke.getKeyCode() == KeyEvent.VK_BACK_SPACE)
+			{
+				grid[focusY][focusX].setLetter(Letter.BLANK);
+				repaint();
+			}
 			if(!Letter.letterExists(c))
 			{
 				if(ke.getKeyCode() == KeyEvent.VK_DOWN)
@@ -320,9 +384,8 @@ public class GridPanel extends JPanel implements MouseListener, KeyListener
 				focusX = 0;
 				focusY++;
 			}
-			generateClues();
 		}
-		
+		generateClues();
 		repaint();
 	}
 
@@ -340,7 +403,7 @@ public class GridPanel extends JPanel implements MouseListener, KeyListener
 	@Override
 	public void keyTyped(KeyEvent ke) {}
 	
-	public static void main(String[] args)
+	public static void main(String[] args) throws Exception
 	{
 		GridPanel gp = new GridPanel();
 		gp.setFocusable(true);
@@ -350,6 +413,177 @@ public class GridPanel extends JPanel implements MouseListener, KeyListener
 		jf.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		jf.setSize(300,300);
 		jf.setVisible(true);
-		//gp.requestFocusInWindow();
+	}
+	
+	public void updateFromLetterArray(Letter[][] letters)
+	{
+		grid = new LetterBox[5][5];
+		for(int i = 0; i < grid.length;i++)
+			for(int j = 0; j < grid.length;j++)
+				grid[i][j] = new LetterBox(letters[i][j]);
+		generateClues();
+		update(this.getGraphics());
+	}
+	
+	public void updateFromTempSolution(Letter[][] letters, Letter[][] old)
+	{
+		grid = new LetterBox[5][5];
+		for(int i = 0; i < grid.length;i++)
+			for(int j = 0; j < grid.length;j++)
+			{
+				boolean isGray = !letters[i][j].equals(old[i][j]);
+				grid[i][j] = new LetterBox(letters[i][j],isGray);
+			}
+		generateClues();
+		update(this.getGraphics());
+	}
+	
+	public class Searcher 
+	{
+	    // This classes only purpose is to run the Search command.  I had tried to
+	    // write it as part of the node class, but found I was unable to talk about
+	    // a node's children without having this remove.
+
+	    // This function returns the first complete solution it finds using its
+	    // algorithm before it stops.
+	    public Crossword Search(Crossword curr, Letter[][] old)
+	    {
+	        // Accesses crossword information
+	        //System.out.println(curr);
+	        // if the crossword is already solved, return the crossword
+	        // As a note, I have also changed this if to simply print out an answer
+	        // and then return null to continue looking.  When I put in 2 words using
+	        // the Search method below, I would typically find between 40 and 80 solutions.
+	        // Do not try this over an empty grid with the 9000 list.  I ran it for 4
+	        // minutes, after which it had not finished the loop looking at the first word
+	        // of the second insertion into the grid.  When one considers that each second loop
+	        // will have roughly 9000/26 possibilities to check, that there are roughly 9000 first
+	        // possibilities to check, and that a partial search into one level 2 took more than
+	        // 4 minutes, it could take several decades to complete the search.  I also had
+	        // more than 700 solutions after 4 minutes, so it isn't like one needs to
+	        // run it a long time to get several answers.
+	    	
+	    	updateFromTempSolution(curr.getGrid(),old);
+	    	
+	        if(curr.isFinished())
+	        {
+	            return curr;
+	        }
+	        //If the crossword is completely filled, but the answers are not valid,
+	        //as checked above, return null to signal no possible answer
+	        else if(curr.isFull())
+	        {
+	            return null;
+	        }
+	        // If the crossword cannot be solved from this point, return null
+	        else if(!curr.canBeFinished())
+	        {
+	            return null;
+	        }
+	        else
+	        {
+	            // This finds whether the index returned by select index is a row
+	            // or column, also initializes indy and poss for later
+	            boolean isRow = curr.IndexRow();
+	            int indy;
+	            String[] poss;
+	            // This if else block determines the index to search at
+	            if(isRow)
+	            {
+	                indy = curr.selectIndexRow();
+	            }
+	            else
+	            {
+	                indy = curr.selectIndexCol();
+	            }
+	            // This if else block gets a list of possible words at that index
+	            if(isRow)
+	            {
+	                poss = curr.getPossRow(indy);
+	            }
+	            else
+	            {
+	                poss = curr.getPossCol(indy);
+	            }
+	            
+	            // This forms an Array of words based on the possibilities available
+	            // at this index
+	            // It might be better to run natural for loops instead of for each
+	            // loops here, as I am still messing around with indices while they
+	            // are running
+	            Word[] posse = new Word[poss.length];
+	            for(int i = 0; i < poss.length; i++)
+	            {
+	                posse[i] = new Word(poss[i]);
+	            }
+	            
+	            // This calculates how many possible words can be added to the grid
+	            // when each word has been added.  This allows me to sort the words
+	            // by their likelihood of being put here in the final solution
+	            if(isRow)
+	            {
+	                for(int i = 0; i < poss.length; i++)
+	                {
+	                    curr.setWordRow(indy, poss[i]);
+	                    posse[i].setNumPoss(curr.sumPoss());
+	                    curr.undoLast();
+	                }
+	            }
+	            else
+	            {
+	                for(int i = 0; i < poss.length; i++)
+	                {
+	                    curr.setWordCol(indy, poss[i]);
+	                    posse[i].setNumPoss(curr.sumPoss());
+	                    curr.undoLast();
+	                }
+	            }
+	            // Sort array of words based on their flexibility
+	            // In future, I simply iterate through the list, so that I start
+	            // with the most likely word
+	            Arrays.sort(posse, new WordSortbyNumPoss());
+	            // Reverts Words into strings so that they can be inserted into the
+	            // grid in the proper order
+	            for(int i = 0; i < posse.length; i++)
+	            {
+	                poss[i] = posse[i].toString();
+	            }
+	            // This loop creates the next level in the recursion.
+	            for(int i = 0; i < poss.length; i++)
+	            {
+	                if(isRow)
+	                {
+	                    //The current crossword is modified and passed to the 
+	                    // next level of recursion.
+	                    curr.setWordRow(indy, poss[i]);
+	                    Crossword cw = Search(curr,old);
+	                    // If cw kicks back a null, either the puzzle is unsolvable
+	                    // at the next level or it couldn't find a solution deeper
+	                    // in the tree. More checking is needed
+	                    // If anything else is returned, it has to be a full solution.
+	                    if(!(cw == null))
+	                    {
+	                        return cw;
+	                    }
+	                    // if the puzzle found by the next level is not a solution,
+	                    // then undo the last move and try a different possibility
+	                    curr.undoLast();
+	                }
+	                else
+	                {
+	                    curr.setWordCol(indy, poss[i]);
+	                    Crossword cw = Search(curr,old);
+	                    if(!(cw == null))
+	                    {
+	                        return cw;
+	                    }
+	                    curr.undoLast();
+	                }
+	            }
+	            // If all possibilities at this level have been checked without
+	            // finding a solution, return null.
+	            return null;
+	        }
+	    }
 	}
 }

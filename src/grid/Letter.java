@@ -39,6 +39,22 @@ public enum Letter
 		return letters;
 	}
 	
+	public static Letter fromChar(char c)
+	{
+		c = Character.toUpperCase(c);
+		for(Letter l : Letter.values())
+			if(c == l.getChar())
+			{
+				return l;
+			}
+		return null;
+	}
+	
+	public static void main(String ... args)
+	{
+		System.out.println(Letter.fromChar('c'));
+	}
+	
 	public static boolean letterExists(char c)
 	{
 		if(c >= 'a' && c <= 'z')
