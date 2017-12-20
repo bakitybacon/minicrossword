@@ -6,7 +6,7 @@
 package minicrossword;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
 
 import grid.Letter;
 
@@ -322,85 +322,82 @@ public class Crossword
         }
         return false;
     }
-    // These functions return a list of possible words at a given index
-    public String[] getPossRow(int index)
+
+    public String[] getPossibilities(String pattern)
     {
-        Letter[] form = new Letter[cl];
-        for(int j = 0; j < cl; j++)
+        if(patternhash.containsKey(pattern))
         {
-            form[j] = puzzle[index][j];
-        }
-        // This might be a stupid way to deal with words that have already been
-        // filled, but it was the solution I came up with for not getting caught
-        // checking all the old words over and over.  Each word needs a potential
-        // value based on how many possibilities it has.  Since I am trying to 
-        // minimize the number of possibilities, I pick high field and return all
-        // available possibilities if a word has already been filled in.  This
-        // ensures that these words will never be picked as potential avenues
-        // of exploration
-        if(getSpaces(index,true) == 0)
-        {
-            return wordlist;
+            return patternhash.get(pattern);
         }
         ArrayList<String> possi = new ArrayList<String>();
-        for(String s: wordlist)
+        for(String str : wordlist)
         {
             boolean fits = true;
-            for(int j = 0; j < cl; j++)
+            for(int i = 0; i < str.length(); i++)
             {
-                if(form[j] != Letter.BLANK)
-                {
-                    if(form[j] != Letter.fromChar(s.charAt(j)))
-                    {
+                if(pattern.charAt(i) != '*' && pattern.charAt(i) != str.charAt(i))
                         fits = false;
-                    }
-                }
             }
-            if(fits && !containsWord(s))
-                possi.add(s);
+            if(fits)
+                possi.add(str);
         }
         String[] poss = new String[possi.size()];
         for(int i = 0; i < possi.size(); i++)
         {
             poss[i] = possi.get(i);
+        }
+        patternhash.put(pattern, poss);
+        return poss;
+    }
+
+    public String[] getPossibilitiesNotInGrid(String pattern)
+    {
+        String[] possibilities = getPossibilities(pattern);
+        ArrayList<String> uniques = new ArrayList<>();
+        for(String str : possibilities)
+            if(!containsWord(str))
+               uniques.add(str);
+        String[] poss = new String[uniques.size()];
+        for(int i = 0; i < uniques.size(); i++)
+        {
+            poss[i] = uniques.get(i);
         }
         return poss;
     }
+
+    public String toPattern(int index, boolean isRow)
+    {
+        String pattern = "";
+        if(isRow)
+        {
+            for(int i = 0; i < cl; i++)
+            {
+                pattern += getLetter(index, i).getChar();
+            }
+            return pattern.toLowerCase();
+        }
+        else 
+        {
+            for(int j = 0; j < cl; j++)
+            {
+                pattern += getLetter(j, index).getChar();
+            }
+            return pattern.toLowerCase();
+        }
+    }
+    // These functions return a list of possible words at a given index
+    public String[] getPossRow(int index)
+    {
+    	if(getSpaces(index,true) == 0)
+    		return wordlist;
+    	return getPossibilitiesNotInGrid(toPattern(index,true));
+    }
     public String[] getPossCol(int index)
     {
-        Letter[] form = new Letter[rw];
-        for(int i = 0; i < rw; i++)
-        {
-            form[i] = puzzle[i][index];
-        }
-        
-        if(getSpaces(index,false) == 0)
-        {
-            return wordlist;
-        }
-        ArrayList<String> possi = new ArrayList<String>();
-        for(String s : wordlist)
-        {
-            boolean fits = true;
-            for(int i = 0; i < rw; i++)
-            {
-                if(form[i] != Letter.BLANK)
-                {
-                    if(form[i] != Letter.fromChar(s.charAt(i)))
-                    {
-                        fits = false;
-                    }
-                }
-            }
-            if(fits && !containsWord(s))
-                possi.add(s);
-        }
-        String[] poss = new String[possi.size()];
-        for(int i = 0; i < possi.size(); i++)
-        {
-            poss[i] = possi.get(i);
-        }
-        return poss;
+    	if(getSpaces(index,false) == 0)
+    		return wordlist;
+    	return getPossibilitiesNotInGrid(toPattern(index,false));
+       
     }
     // These functions select an index to explore, trying to minimize the
     // number of possible answers to check by getting the index with the least
@@ -486,46 +483,26 @@ public class Crossword
     public boolean IndexRow()
     {
         int colmin = wordlist.length;
-        int colindex = 0;
         int colSpaces = 0;
         for(int j = 0; j < rw; j++)
         {
             String[] poss = getPossCol(j);
-            //System.out.println("poss array "+Arrays.toString(poss));
             int spaces = getSpaces(j, false);
-            //System.out.println("we have "+spaces+" col spaces");
-            if(poss.length < colmin)
+            if(poss.length < colmin || ((poss.length == colmin && spaces > colSpaces)))
             {
                 colmin = poss.length;
-                colindex = j;
-                colSpaces = spaces;
-            }
-            else if(poss.length == colmin && spaces > colSpaces)
-            {
-                colmin = poss.length;
-                colindex = j;
                 colSpaces = spaces;
             }
         }
         int rowmin = wordlist.length;
-        int rowindex = 0;
         int rowSpaces = 0;
         for(int i = 0; i < cl; i++)
         {
             int spaces = getSpaces(i, true);
-            //System.out.println("we have "+spaces+" row spaces");
             String[] poss = getPossRow(i);
-            //System.out.println("poss array "+Arrays.toString(poss));
-            if(poss.length < rowmin)
+            if(poss.length < rowmin || (poss.length == rowmin && spaces > rowSpaces))
             {
                 rowmin = poss.length;
-                rowindex = i;
-                rowSpaces = spaces;
-            }
-            else if(poss.length == rowmin && spaces > rowSpaces)
-            {
-                rowmin = poss.length;
-                rowindex = i;
                 rowSpaces = spaces;
             }
         }
@@ -553,4 +530,5 @@ public class Crossword
     private Letter[][] puzzle;
     private String[] wordlist;
     private ArrayList<Move> moveList;
+    private HashMap<String, String[]> patternhash = new HashMap<>();
 }

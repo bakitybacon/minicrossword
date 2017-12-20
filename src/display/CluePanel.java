@@ -13,6 +13,7 @@ import javax.swing.SwingConstants;
 
 public class CluePanel extends JPanel
 {
+	private static final long serialVersionUID = -4429409071091275624L;
 	HashMap<Integer,String> acrossClues = new HashMap<>();
 	HashMap<Integer,String> downClues = new HashMap<>();
 	
@@ -52,6 +53,7 @@ public class CluePanel extends JPanel
 
 class ClueListPanel extends JPanel
 {
+	private static final long serialVersionUID = -2475823024253988357L;
 	HashMap<Integer,String> clues;
 	final boolean isAcross;
 	public ClueListPanel(HashMap<Integer,String> clues, boolean isAcross)

@@ -39,7 +39,7 @@ public class Searcher
         // more than 700 solutions after 4 minutes, so it isn't like one needs to
         // run it a long time to get several answers.
     	
-    	System.out.println("curr is " +curr);
+    	System.out.println(curr);
     	
         if(curr.isFinished())
         {

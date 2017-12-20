@@ -8,6 +8,8 @@ import javax.swing.JFrame;
 
 public class MiniWriterFrame extends JFrame
 {
+
+	private static final long serialVersionUID = 370198487525302767L;
 	final GridPanel gp;
 	final CluePanel cp;
 	public MiniWriterFrame()
