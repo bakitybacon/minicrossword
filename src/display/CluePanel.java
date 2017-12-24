@@ -80,7 +80,6 @@ class ClueListPanel extends JPanel
 	}
 	public void setClues(HashMap<Integer, String> clues)
 	{
-		System.out.println("hey");
 		this.clues = clues;
 		removeAll();
 		updateUI();

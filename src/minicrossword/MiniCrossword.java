@@ -16,16 +16,12 @@ import java.util.Scanner;
  */
 public class MiniCrossword 
 {
-
-    /**
-     * @param args the command line arguments
-     */
     public static void main(String[] args) 
     {
     	String[] wordy = null;
         try
         {
-        	
+        	//trying to only read in words from the word list that are ever actually used
             Scanner CrosswordClues = new Scanner(new File("8word.game"));
             ArrayList<String> wordlist = new ArrayList<>();
             while(CrosswordClues.hasNext())
@@ -79,8 +75,6 @@ public class MiniCrossword
         //grid and a modified grid to finish, while a no solution grid was
         //able to check the entire tree in 30 seconds to return no solution;
         //another no solution grid took 2 min 51 sec to finish working
-
-        new Searcher().SearchwithWords("xanax", "xerox", wordy);
     }
     
 }

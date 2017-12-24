@@ -212,9 +212,6 @@ public class GridPanel extends JPanel implements MouseListener, KeyListener
 		{
 			focusX = x/squareWidth;
 			focusY = y/squareHeight;
-			
-			System.out.println(focusX);
-			System.out.println(focusY);
 		}
 		repaint();
 	}
@@ -294,7 +291,6 @@ public class GridPanel extends JPanel implements MouseListener, KeyListener
 			}
 			if(cp != null && grid[focusX][focusY].getLetter().equals(Letter.BLACK))
 			{
-				System.out.println("droog");
 				ArrayList<Integer>[] clues = generateClues();
 				ArrayList<Integer> across = clues[0];
 				ArrayList<Integer> down = clues[1];
