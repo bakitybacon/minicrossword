@@ -17,4 +17,5 @@ Future Plans:
 * the GUI should support searching beyond the first possibility found.
 * the GUI should probably not update so frequently that it cannot even fully redraw the screen before being asked to update again.
 * the wordlists should be sorted in order of usage with the most frequently used first so that a user can say "I only want words that are actually used more than 'zyzzyvas'" by only reading say the top 50% of each list
+* allow the user to export to PDF, Word, maybe some crossword formats, if they exist. That's what this program is for, after all.
 * generalize the concept of a crossword to higher (and lower) dimensions just for the fun of it (because who doesn't want a 3D crossword, right?)
