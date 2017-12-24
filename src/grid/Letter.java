@@ -1,5 +1,7 @@
 package grid;
 
+import java.util.Arrays;
+
 public enum Letter 
 {
 	A('A'),B('B'),C('C'),D('D'),E('E'),
@@ -52,7 +54,7 @@ public enum Letter
 	
 	public static void main(String ... args)
 	{
-		System.out.println(Letter.fromChar('c'));
+		System.out.println(Arrays.toString(Letter.fromString("$gash")));
 	}
 	
 	public static boolean letterExists(char c)

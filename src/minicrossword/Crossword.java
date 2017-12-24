@@ -8,6 +8,8 @@ package minicrossword;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import javax.swing.JOptionPane;
+
 import grid.Letter;
 
 /**
@@ -213,6 +215,9 @@ public class Crossword
             {
                 wordAtIndex += puzzle[i][index].getChar();
             }
+            wordAtIndex = wordAtIndex.replaceAll("\\$", "");
+            if(wordAtIndex.length() == 0)
+            	return true;
             for(String s : wordlist)
             {
                 if(wordAtIndex.equalsIgnoreCase(s))
@@ -229,6 +234,9 @@ public class Crossword
             {
                 wordAtIndex += puzzle[index][j].getChar();
             }
+            wordAtIndex = wordAtIndex.replaceAll("\\$", "");
+            if(wordAtIndex.length() == 0)
+            	return true;
             for(String s: wordlist)
             {
                 if(wordAtIndex.equalsIgnoreCase(s))
@@ -286,18 +294,11 @@ public class Crossword
             boolean charsMatch = true;
             for(int j = 0; j < cl; j++)
             {
-                try
+            	if(j >= s.length())
+            		break;
+                if(puzzle[index][j] != Letter.fromChar(s.charAt(j)))
                 {
-	                if(puzzle[index][j] != Letter.fromChar(s.charAt(j)))
-	                {
-	                    charsMatch = false;
-	                }
-                }
-                catch(StringIndexOutOfBoundsException e)
-                {
-                    System.out.println("Index equals" + index);
-                    System.out.println("j equals " + j);
-                    System.out.println("String equals " + s);
+                    charsMatch = false;
                 }
             }
             if(charsMatch)
@@ -310,6 +311,8 @@ public class Crossword
             boolean charsMatch = true;
             for(int j = 0; j < rw; j++)
             {
+            	if(j >= s.length())
+            		break;
                 if(puzzle[j][index] != Letter.fromChar(s.charAt(j)))
                 {
                     charsMatch = false;
@@ -332,8 +335,11 @@ public class Crossword
         ArrayList<String> possi = new ArrayList<String>();
         for(String str : wordlist)
         {
+        	int strlen = str.length();
+        	if(strlen != pattern.length())
+        		continue;
             boolean fits = true;
-            for(int i = 0; i < str.length(); i++)
+            for(int i = 0; i < strlen; i++)
             {
                 if(pattern.charAt(i) != '*' && pattern.charAt(i) != str.charAt(i))
                         fits = false;
@@ -349,18 +355,39 @@ public class Crossword
         patternhash.put(pattern, poss);
         return poss;
     }
+    
+    public String fitBlacks(boolean[] isBlack, String word)
+    {
+    	String result = "";
+    	int wordpos = 0;
+    	for(int i = 0; i < isBlack.length; i++)
+    	{
+    		if(isBlack[i])
+    			result += "$";
+    		else 
+    			result += word.charAt(wordpos++);
+    	}	
+    	return result;
+    }
 
     public String[] getPossibilitiesNotInGrid(String pattern)
     {
-        String[] possibilities = getPossibilities(pattern);
+        String[] possibilities = getPossibilities(pattern.replaceAll("\\$", ""));
+        
+        boolean[] isBlack = new boolean[pattern.length()];
+        for(int i = 0; i < isBlack.length;i++)
+        	isBlack[i] = pattern.charAt(i) == '$';
+        
         ArrayList<String> uniques = new ArrayList<>();
         for(String str : possibilities)
             if(!containsWord(str))
                uniques.add(str);
+        
         String[] poss = new String[uniques.size()];
+        
         for(int i = 0; i < uniques.size(); i++)
         {
-            poss[i] = uniques.get(i);
+            poss[i] = fitBlacks(isBlack,uniques.get(i));
         }
         return poss;
     }
@@ -370,7 +397,7 @@ public class Crossword
         String pattern = "";
         if(isRow)
         {
-            for(int i = 0; i < cl; i++)
+            for(int i = 0; i < rw; i++)
             {
                 pattern += getLetter(index, i).getChar();
             }
@@ -450,7 +477,7 @@ public class Crossword
                 min = poss.length;
                 index = i;
                 numSpaces = spaces;
-                System.out.println(min + " " + index + " " + numSpaces);
+                //System.out.println(min + " " + index + " " + numSpaces);
             }
         }
         return index;

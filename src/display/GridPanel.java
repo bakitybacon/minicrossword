@@ -27,13 +27,12 @@ import minicrossword.WordSortbyNumPoss;
 public class GridPanel extends JPanel implements MouseListener, KeyListener
 {
 	private static final long serialVersionUID = -8288262956831802797L;
-	private int numClues = 0;
-	LetterBox[][] grid = new LetterBox[5][5];
-	CluePanel cp = null;
+	private LetterBox[][] grid = new LetterBox[5][5];
+	private CluePanel cp = null;
 	
 	Crossword cross = null;
 	
-	String[] wordlist = null;
+	private String[] wordlist = null;
 	
 	int focusX;
 	int focusY;
@@ -46,8 +45,6 @@ public class GridPanel extends JPanel implements MouseListener, KeyListener
 				grid[i][j] = new LetterBox();
 				if(i == 0 && j == 0)
 					grid[i][j] = new LetterBox(Letter.A);
-				//if(i == 1 && j == 0)
-				//	grid[i][j] = new LetterBox(Letter.BLACK);
 				if(i == 0 && j == 1)
 					grid[i][j] = new LetterBox(Letter.S);
 				if(i == 0 && j == 2)
@@ -60,25 +57,25 @@ public class GridPanel extends JPanel implements MouseListener, KeyListener
 		
 		focusX = -1;
 		focusY = -1;
-		generateClues();
-		getClues();
 		
-		try
-		{
-			Scanner CrosswordClues = new Scanner(new File("5word.game"));
-			int numWords = CrosswordClues.nextInt();
-			wordlist = new String[numWords];
-			for(int i = 0; i < numWords; i++)
-			{
-				wordlist[i] = CrosswordClues.next();
-			}
-			CrosswordClues.close();
-			System.out.println("Success");
-		}
-		catch(FileNotFoundException exception)
-		{
-			System.err.println("File not found!");
-		}
+        try
+        {
+        	
+            Scanner CrosswordClues = new Scanner(new File("43word.game"));
+            ArrayList<String> wordal = new ArrayList<>();
+            while(CrosswordClues.hasNext())
+            {
+                wordal.add(CrosswordClues.next());
+            }
+            CrosswordClues.close();
+            wordlist = new String[wordal.size()];
+            wordal.toArray(wordlist);
+            System.out.println("Success");
+        }
+        catch(FileNotFoundException e)
+        {
+        	System.err.println("File Not Found!");
+        }
 		
 		addMouseListener(this);
 		addKeyListener(this);
@@ -91,6 +88,8 @@ public class GridPanel extends JPanel implements MouseListener, KeyListener
 	
 	public void paintComponent(Graphics g)
 	{
+		generateClues();	
+		
 		Graphics2D g2 = (Graphics2D)g;
 		
 		g2.setColor(Color.WHITE);
@@ -119,7 +118,9 @@ public class GridPanel extends JPanel implements MouseListener, KeyListener
 				
 				if(j == focusX && i == focusY)
 				{
-					g2.setColor(Color.CYAN);
+					if(lb.getLetter().equals(Letter.BLACK))
+						g2.setColor(Color.MAGENTA);
+					else g2.setColor(Color.CYAN);
 					g2.fillRect(squareWidth * j, squareHeight * i, squareWidth, squareHeight);
 					g2.setColor(Color.BLACK);
 				}
@@ -141,105 +142,35 @@ public class GridPanel extends JPanel implements MouseListener, KeyListener
 			}
 	}
 	
-	public int numClues()
+	public ArrayList<Integer>[] generateClues()
 	{
-		generateClues();
-		return numClues;
-	}
-	
-	public ArrayList<Integer>[] getClues()
-	{
-		boolean[][] isClueSquare = new boolean[5][5];
-		for(int row = 0; row < 5; row++)
-		{
-			for(int col = 0; col < 5; col++)
-				if(!grid[row][col].letter.equals(Letter.BLACK))
-				{
-					isClueSquare[row][col] = true;
-					break;
-				}
-		}
-		
-		for(int col = 0; col < 5; col++)
-		{
-			for(int row = 0; row < 5; row++)
-				if(!grid[row][col].letter.equals(Letter.BLACK))
-				{
-					isClueSquare[row][col] = true;
-					break;
-				}
-		}
-		
-		int clueNum = 1;
-		
 		ArrayList[] cluemap = new ArrayList[2];
 		cluemap[0] = new ArrayList<Integer>();
 		cluemap[1] = new ArrayList<Integer>();
-		
-		boolean[] rows = new boolean[5];
-		boolean[] cols = new boolean[5];
-		
-		for(int i = 0; i < 5; i++)
-			for(int j = 0; j < 5; j++)
-			{
-				if(isClueSquare[i][j])
-				{
-					if(!rows[i])
-					{
-						cluemap[0].add(clueNum);
-						rows[i] = true;
-					}
-					if(!cols[j])
-					{
-						cluemap[1].add(clueNum);
-						cols[j] = true;
-					}
-					clueNum++;
-				}
-			}
-		
-		//System.out.println(Arrays.toString(cluemap));
-		return cluemap;
-	}
-	
-	private void generateClues()
-	{
-		boolean[][] isClueSquare = new boolean[5][5];
+		int clueNum = 1;
 		for(int row = 0; row < 5; row++)
 		{
 			for(int col = 0; col < 5; col++)
-				if(!grid[row][col].letter.equals(Letter.BLACK))
-				{
-					isClueSquare[row][col] = true;
-					break;
-				}
-		}
-		
-		for(int col = 0; col < 5; col++)
-		{
-			for(int row = 0; row < 5; row++)
-				if(!grid[row][col].letter.equals(Letter.BLACK))
-				{
-					isClueSquare[row][col] = true;
-					break;
-				}
-		}
-		
-		int clueNum = 1;
-		
-		for(int i = 0; i < 5; i++)
-			for(int j = 0; j < 5; j++)
 			{
-				if(isClueSquare[i][j])
+				int leftrow = row - 1;
+				int abovecol = col - 1;
+				if(!grid[row][col].getLetter().equals(Letter.BLACK) && 
+						(leftrow < 0 || abovecol < 0 || grid[row][abovecol].getLetter().equals(Letter.BLACK)
+						|| grid[leftrow][col].getLetter().equals(Letter.BLACK)))
 				{
-					grid[i][j].setClueNum(clueNum++);
+					grid[row][col].setClueNum(clueNum);
+					if(leftrow < 0 || grid[leftrow][col].getLetter().equals(Letter.BLACK))
+						cluemap[0].add(clueNum);
+					if(abovecol < 0 || grid[row][abovecol].getLetter().equals(Letter.BLACK))
+						cluemap[1].add(clueNum);
+					clueNum++;
 				}
-				else grid[i][j].setClueNum(-1);
+				else
+					grid[row][col].setClueNum(-1);
 			}
-		//for(LetterBox[] lb : grid)
-		//	System.out.println(Arrays.toString(lb));
-		
-		numClues = clueNum;
+		}
+	
+		return cluemap;
 	}
 
 	@Override
@@ -261,7 +192,7 @@ public class GridPanel extends JPanel implements MouseListener, KeyListener
 			
 			if(cp != null)
 			{
-				ArrayList<Integer>[] clues = getClues();
+				ArrayList<Integer>[] clues = generateClues();
 				ArrayList<Integer> across = clues[0];
 				ArrayList<Integer> down = clues[1];
 				
@@ -300,11 +231,15 @@ public class GridPanel extends JPanel implements MouseListener, KeyListener
 			LetterBox[][] oldgrid = new LetterBox[5][5];
 			Letter[][] oldgridletters = new Letter[5][5];
 			for(int i = 0; i < grid.length;i++)
+			{
 				for(int j = 0; j < grid.length;j++)
 				{
 					oldgrid[i][j] = grid[i][j];
 					oldgridletters[i][j] = grid[i][j].getLetter();
+					System.out.print(oldgridletters[i][j]+" ");
 				}
+				System.out.println();
+			}
 			Letter[][] lettergrid = new Letter[5][5];
 			for(int i = 0; i < grid.length;i++)
 				for(int j = 0; j < grid.length;j++)
@@ -360,7 +295,7 @@ public class GridPanel extends JPanel implements MouseListener, KeyListener
 			if(cp != null && grid[focusX][focusY].getLetter().equals(Letter.BLACK))
 			{
 				System.out.println("droog");
-				ArrayList<Integer>[] clues = getClues();
+				ArrayList<Integer>[] clues = generateClues();
 				ArrayList<Integer> across = clues[0];
 				ArrayList<Integer> down = clues[1];
 				

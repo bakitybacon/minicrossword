@@ -19,7 +19,7 @@ public class MiniWriterFrame extends JFrame
 		add(gp);
 		gp.setFocusable(true);
 		
-		ArrayList<Integer>[] clues = gp.getClues();
+		ArrayList<Integer>[] clues = gp.generateClues();
 		ArrayList<Integer> across = clues[0];
 		ArrayList<Integer> down = clues[1];
 		

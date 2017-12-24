@@ -40,7 +40,7 @@ public class Searcher
         // run it a long time to get several answers.
     	
     	System.out.println(curr);
-    	
+    	    	
         if(curr.isFinished())
         {
             return curr;
