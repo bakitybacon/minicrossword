@@ -4,9 +4,11 @@ Mini Crossword Generator
 This project attempts to generate a 5 by 5 miniature crossword (like you can find in the New York Times) given a grid with a couple words already in. It selects the word that will maximize the number of possibilities remaining (i.e. the least restrictive word) in order to come to one possible solution quickly. There is a GUI implemented that allows the user to enter words into a grid and see all of the permutations that are being tested until a complete puzzle is found. Even with our very expansive word list, it is fairly common to not find any completed crossword. 
 
 Here's a grid based on "ski" and "slump":
+
 ![Sample Grid](https://github.com/bakitybacon/minicrossword/blob/master/fullgrid.png)
 
 Here's an empty grid, ready for export after a few clues are added:
+
 ![Sample Grid](https://github.com/bakitybacon/minicrossword/blob/master/grid.png)
 
 The algorithm uses hashing to increase execution speed significantly. This way, the algorithm doesn't have to regenerate the same possibilities three hundred times for the same letter pattern. 
