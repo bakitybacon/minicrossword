@@ -9,6 +9,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
@@ -16,6 +17,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Scanner;
 
+import javax.imageio.ImageIO;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
@@ -34,8 +36,10 @@ public class GridPanel extends JPanel implements MouseListener, KeyListener
 	
 	private String[] wordlist = null;
 	
-	int focusX;
-	int focusY;
+	private int focusX;
+	private int focusY;
+	
+	private boolean noLetters = false;
 	
 	public GridPanel()
 	{
@@ -81,6 +85,18 @@ public class GridPanel extends JPanel implements MouseListener, KeyListener
 		addKeyListener(this);
 	}
 	
+	public void export()
+	{
+		noLetters = true;
+		BufferedImage bi = new BufferedImage(getWidth(), getHeight(), BufferedImage.TYPE_INT_ARGB); 
+		Graphics g = bi.createGraphics();
+		paint(g);
+		g.dispose();
+		try{ImageIO.write(bi,"png",new File("grid.png"));}catch (Exception e) {}
+		noLetters = false;
+		System.out.println("wrote image!");
+	}
+	
 	public void setCluePanel(CluePanel cp)
 	{
 		this.cp = cp;
@@ -116,7 +132,7 @@ public class GridPanel extends JPanel implements MouseListener, KeyListener
 					g2.fillRect(squareWidth * j, squareHeight * i, squareWidth, squareHeight);
 				}
 				
-				if(j == focusX && i == focusY)
+				if(!noLetters && j == focusX && i == focusY)
 				{
 					if(lb.getLetter().equals(Letter.BLACK))
 						g2.setColor(Color.MAGENTA);
@@ -125,7 +141,7 @@ public class GridPanel extends JPanel implements MouseListener, KeyListener
 					g2.setColor(Color.BLACK);
 				}
 				
-				if(!lb.letter.equals(Letter.BLANK) && !lb.letter.equals(Letter.BLACK))
+				if(!noLetters && !lb.letter.equals(Letter.BLANK) && !lb.letter.equals(Letter.BLACK))
 				{
 					if(lb.isGray())
 						g2.setColor(Color.LIGHT_GRAY);
@@ -253,6 +269,7 @@ public class GridPanel extends JPanel implements MouseListener, KeyListener
 			Letter[][] solution = searcher.Search(cross,oldgridletters).getGrid();
 			updateFromLetterArray(solution);
 			repaint();
+			export();
 		}
 		else if(focusX != -1 && focusY != -1)
 		{
