@@ -2,6 +2,7 @@ package display;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Desktop;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -11,7 +12,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -25,6 +26,7 @@ import grid.Letter;
 import minicrossword.Crossword;
 import minicrossword.Word;
 import minicrossword.WordSortbyNumPoss;
+import output.Exporter;
 
 public class GridPanel extends JPanel implements MouseListener, KeyListener
 {
@@ -32,9 +34,15 @@ public class GridPanel extends JPanel implements MouseListener, KeyListener
 	private LetterBox[][] grid = new LetterBox[5][5];
 	private CluePanel cp = null;
 	
+	private double wordlistpercentage;
+	
 	Crossword cross = null;
 	
-	private String[] wordlist = null;
+	private String[] masterlist3 = null;
+	private String[] masterlist4 = null;
+	private String[] masterlist5 = null;
+	
+	private String[] workinglist = null;
 	
 	private int focusX;
 	private int focusY;
@@ -62,27 +70,70 @@ public class GridPanel extends JPanel implements MouseListener, KeyListener
 		focusX = -1;
 		focusY = -1;
 		
-        try
-        {
-        	
-            Scanner CrosswordClues = new Scanner(new File("43word.game"));
-            ArrayList<String> wordal = new ArrayList<>();
-            while(CrosswordClues.hasNext())
-            {
-                wordal.add(CrosswordClues.next());
-            }
-            CrosswordClues.close();
-            wordlist = new String[wordal.size()];
-            wordal.toArray(wordlist);
-            System.out.println("Success");
-        }
-        catch(FileNotFoundException e)
-        {
-        	System.err.println("File Not Found!");
-        }
+        Scanner words = new Scanner(this.getClass().getResourceAsStream("/wordlists/3sorted.game"));
+		ArrayList<String> word3al = new ArrayList<>();
+		while(words.hasNext())
+		{
+		    word3al.add(words.next());
+		}
+		words.close();
+		masterlist3 = new String[word3al.size()];
+		word3al.toArray(masterlist3);
+		
+		words = new Scanner(this.getClass().getResourceAsStream("/wordlists/4sorted.game"));
+		ArrayList<String> word4al = new ArrayList<>();
+		while(words.hasNext())
+		{
+		    word4al.add(words.next());
+		}
+		words.close();
+		masterlist4 = new String[word4al.size()];
+		word4al.toArray(masterlist4);
+		
+		words = new Scanner(this.getClass().getResourceAsStream("/wordlists/5sorted.game"));
+		ArrayList<String> word5al = new ArrayList<>();
+		while(words.hasNext())
+		{
+		    word5al.add(words.next());
+		}
+		words.close();
+		masterlist5 = new String[word5al.size()];
+		word5al.toArray(masterlist5);
+		
+		workinglist = new String[masterlist3.length + masterlist4.length + masterlist5.length];
+		System.arraycopy(masterlist3, 0, workinglist, 0, masterlist3.length);
+		System.arraycopy(masterlist4, 0, workinglist, masterlist3.length, masterlist4.length);
+		System.arraycopy(masterlist5, 0, workinglist, masterlist3.length+masterlist4.length, masterlist5.length);
+		
+		System.out.println("Success");
+		
+		setWordListPercentage(60);
 		
 		addMouseListener(this);
 		addKeyListener(this);
+	}
+	
+	public void setWordListPercentage(double percentage)
+	{
+		if(percentage > 1)
+			percentage /= 100;
+		if(percentage > 1 || percentage <= 0)
+			throw new IllegalArgumentException("unusable percentage!");
+		
+		wordlistpercentage = percentage;
+		
+		int list3len = (int)(masterlist3.length*percentage);
+		int list4len = (int)(masterlist4.length*percentage);
+		int list5len = (int)(masterlist5.length*percentage);
+		workinglist = new String[list3len + list4len + list5len];
+		System.arraycopy(masterlist3, 0, workinglist, 0, list3len);
+		System.arraycopy(masterlist4, 0, workinglist, list3len, list4len);
+		System.arraycopy(masterlist5, 0, workinglist, list3len + list4len, list5len);
+	}
+	
+	public double getWordListPercentage()
+	{
+		return wordlistpercentage;
 	}
 	
 	public void export()
@@ -95,6 +146,24 @@ public class GridPanel extends JPanel implements MouseListener, KeyListener
 		try{ImageIO.write(bi,"png",new File("grid.png"));}catch (Exception e) {}
 		noLetters = false;
 		System.out.println("wrote image!");
+		Exporter.toWordFile(cp.getAcrossClues(),cp.getDownClues());
+		try 
+		{
+			Desktop.getDesktop().open(new File("minicrossword.docx"));
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		}
+	}
+	
+	public void clear()
+	{
+		for(LetterBox[] lb : grid)
+			for(LetterBox box : lb)
+				if(!box.getLetter().equals(Letter.BLACK))
+					box.setLetter(Letter.BLANK);
+		repaint();
 	}
 	
 	public void setCluePanel(CluePanel cp)
@@ -111,14 +180,14 @@ public class GridPanel extends JPanel implements MouseListener, KeyListener
 		g2.setColor(Color.WHITE);
 		g2.fillRect(0, 0, getWidth(),getHeight());
 		
-		int squareWidth = getWidth()/5;
-		int squareHeight = getHeight()/5;
+		int squareWidth = getWidth()/grid.length;
+		int squareHeight = getHeight()/grid[0].length;
 		
 		g2.setColor(Color.BLACK);
 		g2.setStroke(new BasicStroke(2));
 		
-		for(int i = 0; i < 5; i++)
-			for(int j = 0; j < 5; j++)
+		for(int i = 0; i < grid.length; i++)
+			for(int j = 0; j < grid[0].length; j++)
 			{
 				
 				g2.drawRect(squareWidth * j, squareHeight * i, squareWidth, squareHeight);
@@ -152,8 +221,8 @@ public class GridPanel extends JPanel implements MouseListener, KeyListener
 				
 				if(lb.clueNum != -1)
 				{
-					g2.setFont(new Font("liberation serif", Font.PLAIN, 10));
-					g2.drawString(""+lb.clueNum, squareWidth*(j+1) - squareWidth/9, squareHeight*i+squareHeight/6);
+					g2.setFont(new Font("liberation serif", Font.PLAIN, 14));
+					g2.drawString(""+lb.clueNum, squareWidth*(j+1) - squareWidth/7, squareHeight*i+squareHeight/4);
 				}
 			}
 	}
@@ -168,30 +237,30 @@ public class GridPanel extends JPanel implements MouseListener, KeyListener
 		{
 			for(int col = 0; col < 5; col++)
 			{
-				int leftrow = row - 1;
-				int abovecol = col - 1;
+				int aboverow = row - 1;
+				int leftcol = col - 1;
 				if(!grid[row][col].getLetter().equals(Letter.BLACK) && 
-						(leftrow < 0 || abovecol < 0 || grid[row][abovecol].getLetter().equals(Letter.BLACK)
-						|| grid[leftrow][col].getLetter().equals(Letter.BLACK)))
+						(leftcol < 0 || aboverow < 0 || grid[aboverow][col].getLetter().equals(Letter.BLACK)
+						|| grid[row][leftcol].getLetter().equals(Letter.BLACK)))
 				{
 					grid[row][col].setClueNum(clueNum);
-					if(leftrow < 0 || grid[leftrow][col].getLetter().equals(Letter.BLACK))
-						cluemap[0].add(clueNum);
-					if(abovecol < 0 || grid[row][abovecol].getLetter().equals(Letter.BLACK))
+					if(aboverow < 0 || grid[aboverow][col].getLetter().equals(Letter.BLACK))
 						cluemap[1].add(clueNum);
+					if(leftcol < 0 || grid[row][leftcol].getLetter().equals(Letter.BLACK))
+						cluemap[0].add(clueNum);
 					clueNum++;
 				}
 				else
 					grid[row][col].setClueNum(-1);
 			}
 		}
-	
 		return cluemap;
 	}
 
 	@Override
 	public void mouseClicked(MouseEvent me)
 	{
+		requestFocus();
 		int x = me.getX();
 		int y = me.getY();
 		
@@ -232,46 +301,41 @@ public class GridPanel extends JPanel implements MouseListener, KeyListener
 		repaint();
 	}
 	
-	
+	public void search()
+	{
+		LetterBox[][] oldgrid = new LetterBox[5][5];
+		Letter[][] oldgridletters = new Letter[5][5];
+		for(int i = 0; i < grid.length;i++)
+		{
+			for(int j = 0; j < grid[0].length;j++)
+			{
+				oldgrid[i][j] = grid[i][j];
+				oldgridletters[i][j] = grid[i][j].getLetter();
+			}
+		}
+		Letter[][] lettergrid = new Letter[5][5];
+		for(int i = 0; i < grid.length;i++)
+			for(int j = 0; j < grid.length;j++)
+				lettergrid[i][j] = grid[i][j].getLetter();
+		cross = new Crossword(lettergrid,workinglist);
+		Searcher searcher = new Searcher();
+		cross = searcher.Search(cross,oldgridletters);
+		if(cross == null)
+		{
+			grid = oldgrid;
+			repaint();
+			return;
+		}
+		Letter[][] solution = searcher.Search(cross,oldgridletters).getGrid();
+		updateFromLetterArray(solution);
+		repaint();
+	}
 
 	@Override
 	public void keyPressed(KeyEvent ke) 
 	{
 		char c = ke.getKeyChar();
-		if(c == KeyEvent.VK_SPACE)
-		{
-			System.out.println("searching...");
-			LetterBox[][] oldgrid = new LetterBox[5][5];
-			Letter[][] oldgridletters = new Letter[5][5];
-			for(int i = 0; i < grid.length;i++)
-			{
-				for(int j = 0; j < grid.length;j++)
-				{
-					oldgrid[i][j] = grid[i][j];
-					oldgridletters[i][j] = grid[i][j].getLetter();
-					System.out.print(oldgridletters[i][j]+" ");
-				}
-				System.out.println();
-			}
-			Letter[][] lettergrid = new Letter[5][5];
-			for(int i = 0; i < grid.length;i++)
-				for(int j = 0; j < grid.length;j++)
-					lettergrid[i][j] = grid[i][j].getLetter();
-			cross = new Crossword(lettergrid,wordlist);
-			Searcher searcher = new Searcher();
-			cross = searcher.Search(cross,oldgridletters);
-			if(cross == null)
-			{
-				grid = oldgrid;
-				repaint();
-				return;
-			}
-			Letter[][] solution = searcher.Search(cross,oldgridletters).getGrid();
-			updateFromLetterArray(solution);
-			repaint();
-			export();
-		}
-		else if(focusX != -1 && focusY != -1)
+		if(focusX != -1 && focusY != -1)
 		{
 			if(ke.getKeyCode() == KeyEvent.VK_BACK_SPACE)
 			{
@@ -284,26 +348,23 @@ public class GridPanel extends JPanel implements MouseListener, KeyListener
 				{
 					if(focusY+1 < 5)
 						focusY++;
-					repaint();
 				}
 				else if(ke.getKeyCode() == KeyEvent.VK_UP)
 				{
 					if(focusY-1 >= 0)
 						focusY--;
-					repaint();
 				}
 				else if(ke.getKeyCode() == KeyEvent.VK_LEFT)
 				{
 					if(focusX-1 >= 0)
 						focusX--;
-					repaint();
 				}
 				else if(ke.getKeyCode() == KeyEvent.VK_RIGHT)
 				{
 					if(focusX+1 < 5)
 						focusX++;
-					repaint();
 				}
+				repaint();
 				return;
 			}
 			if(cp != null && grid[focusX][focusY].getLetter().equals(Letter.BLACK))
@@ -333,7 +394,6 @@ public class GridPanel extends JPanel implements MouseListener, KeyListener
 				focusY++;
 			}
 		}
-		generateClues();
 		repaint();
 	}
 

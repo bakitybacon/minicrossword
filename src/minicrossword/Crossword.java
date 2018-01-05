@@ -8,8 +8,6 @@ package minicrossword;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import javax.swing.JOptionPane;
-
 import grid.Letter;
 
 /**
